@@ -1,17 +1,21 @@
-import {StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 import {Image} from 'react-native';
 
-const BottomContainer = () => {
+interface Props {
+  createCard: () => void;
+}
+
+const BottomContainer = ({createCard}: Props) => {
   return (
     <View style={styles.bottomContainer}>
-      <View style={styles.bottomView}>
+      <Pressable style={styles.bottomView} onPress={createCard}>
         <Image
           style={styles.addImg}
           source={require('@technicalchallenge/assets/images/add.png')}
         />
         <Text>New food</Text>
-      </View>
+      </Pressable>
     </View>
   );
 };

@@ -2,24 +2,36 @@ import {useLazyQuery, useMutation} from '@apollo/client';
 import BottomContainer from '@technicalchallenge/components/bottom-container';
 import GradientHeader from '@technicalchallenge/components/gradient-header';
 import SelectedItem from '@technicalchallenge/components/selected-item';
-import {DELETE_CARD, GET_CARDS} from '@technicalchallenge/graph-ql/requests';
+import {
+  CREATE_CARD,
+  DELETE_CARD,
+  DUPLICATE_CARD,
+  GET_CARDS,
+  SHARE_CARD,
+} from '@technicalchallenge/graph-ql/requests';
 import React, {useEffect, useState} from 'react';
-import {Image, Pressable, ScrollView, Text, View} from 'react-native';
+import {Image, Pressable, ScrollView, Share, Text, View} from 'react-native';
 import {styles} from './styles';
 
 const CardsView = () => {
-  const [getCards, {loading, data, error}] = useLazyQuery(GET_CARDS);
+  const [getCards, {data}] = useLazyQuery(GET_CARDS);
+  const [shareCard, {error: shareError, data: shareData}] =
+    useMutation(SHARE_CARD);
+  const [duplicateCard, {error: duplicateError}] = useMutation(DUPLICATE_CARD, {
+    refetchQueries: [{query: GET_CARDS}, 'Get Cards'],
+  });
   const [deleteCard, {error: errorDelete}] = useMutation(DELETE_CARD, {
     refetchQueries: [
       {query: GET_CARDS}, // DocumentNode object parsed with gql
       'Get Cardds', // Query name
     ],
   });
+  const [createCard] = useMutation(CREATE_CARD, {
+    refetchQueries: [{query: GET_CARDS}, 'Get Cards'],
+  });
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState();
-
-  console.log(selectedItem);
 
   const toggleModal = () => {
     setIsModalVisible(!isModalVisible);
@@ -30,6 +42,25 @@ const CardsView = () => {
     if (errorDelete) {
       console.log(errorDelete);
     }
+  };
+
+  const onCreateCard = () => {
+    createCard();
+  };
+
+  const onDuplicateCard = () => {
+    duplicateCard({variables: {id: selectedItem}}).then(() => toggleModal());
+    if (duplicateError) {
+      console.log(duplicateError);
+    }
+  };
+
+  const onShareCard = () => {
+    shareCard({variables: {id: selectedItem}}).then(() => {
+      Share.share({
+        url: `https://cards.foodstyles.com/${shareData?.shareCard}`,
+      });
+    });
   };
 
   useEffect(() => {
@@ -70,17 +101,13 @@ const CardsView = () => {
           })}
         </ScrollView>
       </View>
-      <BottomContainer />
+      <BottomContainer createCard={onCreateCard} />
       <SelectedItem
         isModalVisible={isModalVisible}
+        shareItem={onShareCard}
         toggleModal={toggleModal}
         deleteItem={onDeleteCard}
-        duplicateItem={() => {
-          console.log('duplicated');
-        }}
-        shareItem={() => {
-          console.log('shared');
-        }}
+        duplicateItem={onDuplicateCard}
       />
     </>
   );
